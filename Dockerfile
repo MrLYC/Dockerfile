@@ -2,14 +2,20 @@ FROM alpine
 
 MAINTAINER lyc <imyikong@gmail.com>
 
-ADD build.sh /build.sh
-ADD entry.sh /entry.sh
+ADD minio /
+ADD entry.sh /
+ADD build.sh /
 
-ENV DOCKER_DEBUG 0
+ENV BUCKET_ROOT /export
+ENV CONFIG_DIR /export/system
+ENV ACCESS_KEY minio
+ENV SECRET_KEY minio_demo
+ENV REGION us-east-1
 
+WORKDIR /
 RUN ["/build.sh"]
 
 EXPOSE 9000
-WORKDIR /
+VOLUME /export
 
 ENTRYPOINT ["/entry.sh"]
