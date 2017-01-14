@@ -1,4 +1,4 @@
-FROM tutum/centos:centos7
+FROM jdeathe/centos-ssh
 
 MAINTAINER lyc <imyikong@gmail.com>
 
