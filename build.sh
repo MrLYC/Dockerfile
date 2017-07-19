@@ -12,6 +12,6 @@ cd beanstalkd-1.10/
 make
 mv beanstalkd /beanstalkd
 
-apk info | xargs -i apk del {}
 rm -rf /var/cache/apk/*
 rm -f /build.sh || true
+apk info | xargs -i apk del {}
