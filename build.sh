@@ -14,4 +14,4 @@ mv beanstalkd /beanstalkd
 
 rm -rf /var/cache/apk/*
 rm -f /build.sh || true
-apk info | xargs -i apk del {}
+apk info | grep -v apk | xargs -i apk del {} || true
