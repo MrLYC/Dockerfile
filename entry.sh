@@ -4,4 +4,4 @@ if [[ "${DOCKER_DEBUG}" == "1" ]]; then
     set -x
 fi
 
-tail -f /dev/null
+/beanstalkd -u "${USER}" -z "${ZBYTES}" -s "${SBYTES}" ${OPTIONS}
