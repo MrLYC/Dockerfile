@@ -1,25 +1,22 @@
-#!/bin/bash
+#!/bin/sh
 
 set -x
 
+source /entry.sh info
+
 apk update
 
-apk add wget git ctags zip
+apk add wget git ctags zip tar subversion make
 
-mkdir -p /tmp/opengrok
-cd /tmp/opengrok
-wget -O opengrok.tar.gz.zip https://github.com/OpenGrok/OpenGrok/files/467358/opengrok-0.12.1.6.tar.gz.zip
-unzip opengrok.tar.gz.zip
-tar -zxvf opengrok-*.tar.gz -C /var
+wget https://github.com/OpenGrok/OpenGrok/releases/download/1.1-rc5/opengrok-1.1-rc5.tar.gz -O opengrok.tar.gz || exit 1
+tar -xvf opengrok.tar.gz -C /usr/local || exit 2
+mv /usr/local/opengrok* /usr/local/opengrok
 
-mv /var/opengrok* /var/opengrok
-/var/opengrok/bin/OpenGrok deploy
+init
+tomcat_on
 
-mkdir -p /var/opengrok/src
+OpenGrok deploy
+mv ${OPENGROK_TOMCAT_BASE}/webapps/source.war ${OPENGROK_TOMCAT_BASE}/webapps/ROOT.war
 
-mkdir -p /opt/tomcat/webapps/ROOT/
-mv /index.html /opt/tomcat/webapps/ROOT/
-
-rm opengrok*
-
+rm opengrok.tar.gz
 rm -rf /var/cache/apk/*

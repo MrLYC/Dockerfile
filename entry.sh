@@ -4,68 +4,93 @@ if [[ "${DOCKER_DEBUG}" == "1" ]]; then
     set -x
 fi
 
-rm -rf /var/opengrok/src
-mkdir -p "${SOURCE_DIR}"
-ln -s "${SOURCE_DIR}" /var/opengrok/src
+export PATH=/usr/local/opengrok/bin:/usr/local/tomcat/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/java-1.8-openjdk/jre/bin:/usr/lib/jvm/java-1.8-openjdk/bin:$PATH
 
-rm -rf /var/opengrok/data
-mkdir -p "${DATA_DIR}"
-ln -s "${DATA_DIR}" /var/opengrok/data
+export OPENGROK_TOMCAT_BASE=${OPENGROK_TOMCAT_BASE:-/usr/local/tomcat}
+export CATALINA_PID=${CATALINA_PID:-/var/run/catalina.pid}
 
-/opt/tomcat/bin/catalina.sh start
+export OPENGROK_DIR="/var/opengrok"
+export SOURCE_DIR="${OPENGROK_DIR}/src"
 
-indexing_source() {
-    echo "indexing"
-    /var/opengrok/bin/OpenGrok update "${SOURCE_DIR}"
+function init() {
+    mkdir -p "${OPENGROK_DIR}/src"
+    mkdir -p "${OPENGROK_DIR}/etc"
+    mkdir -p "${OPENGROK_DIR}/data"
 }
 
-indexing_git_source() {
+function tomcat_on() {
+    if [[ -e "${CATALINA_PID}" ]]; then
+        if kill -0 `cat ${CATALINA_PID}`; then
+            return 0
+        fi
+    fi
+	catalina.sh start
+}
+
+function opengrok_index() {
+	OpenGrok index
+}
+
+function init_crontab() {
+    crontab -l > cron.txt
+    cat >> cron.txt << EOF
+* * * * * /entry.sh tomcat_on
+*/${INDEXING_DELAY:-1} * * * * /entry.sh opengrok_index
+EOF
+    crontab cron.txt
+}
+
+function info() {
+    env
+}
+
+setup_git_source() {
     for i in $(echo "${GIT_SOURCE}" | tr ";" "\n"); do
         git clone --depth=1 "$i" "${SOURCE_DIR}"
         indexing_source
     done
 }
 
-indexing_tar_source() {
+setup_tar_source() {
     for i in $(echo "${TAR_SOURCE}" | tr ";" "\n"); do
         wget -O /tmp/source.tar $i
         tar -C "${SOURCE_DIR}" -xvf /tmp/source.tar
-        indexing_source
     done
     [ -e /tmp/source.tar ] && rm /tmp/source.tar
 }
 
-indexing_tgz_source() {
+setup_tgz_source() {
     for i in $(echo "${TGZ_SOURCE}" | tr ";" "\n"); do
         wget -O /tmp/source.tar.gz $i
         tar -C "${SOURCE_DIR}" -xvf /tmp/source.tar.gz
-        indexing_source
     done
     [ -e /tmp/source.tar.gz ] && rm /tmp/source.tar.gz
 }
 
-indexing_zip_source() {
+setup_zip_source() {
     for i in $(echo "${ZIP_SOURCE}" | tr ";" "\n"); do
         wget -O /tmp/source.zip $i
         unzip -d "${SOURCE_DIR}" /tmp/source.zip
-        indexing_source
     done
     [ -e /tmp/source.zip ] && rm /tmp/source.zip
 }
 
-interval_indexing() {
-    while true; do
-        sleep "${INDEXING_DELAY}"
-        indexing_source
-    done
+function start() {
+    init
+    init_crontab
+    tomcat_on
+
+    setup_tar_source &
+    setup_tgz_source &
+    setup_zip_source &
+
+    opengrok_index
+    crond -f
 }
 
-ls "${SOURCE_DIR}"
-/var/opengrok/bin/OpenGrok index "${SOURCE_DIR}"
-indexing_git_source
-indexing_tar_source
-indexing_tgz_source
-indexing_zip_source
-interval_indexing &
-
-tail -f /var/opengrok/log/opengrok0.0.log
+command_name="$1"
+shift 1
+if [[ "${command_name}" = "" ]]; then
+    command_name='start'
+fi
+${command_name} $@
