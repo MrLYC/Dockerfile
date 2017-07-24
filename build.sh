@@ -16,7 +16,6 @@ init
 tomcat_on
 
 OpenGrok deploy
-mv ${OPENGROK_TOMCAT_BASE}/webapps/source.war ${OPENGROK_TOMCAT_BASE}/webapps/ROOT.war
 
 rm opengrok.tar.gz
 rm -rf /var/cache/apk/*
