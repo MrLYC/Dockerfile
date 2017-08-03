@@ -4,6 +4,7 @@ MAINTAINER lyc <imyikong@gmail.com>
 
 ADD build.sh /build.sh
 ADD entry.sh /entry.sh
+ADD ../utils.sh /utils.sh
 ENV DOCKER_DEBUG 0
 
 WORKDIR /
