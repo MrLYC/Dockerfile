@@ -13,13 +13,14 @@ tar -xvf opengrok.tar.gz -C /usr/local || exit 2
 mv /usr/local/opengrok* /usr/local/opengrok
 
 init
-tomcat_on
 
-rm -rf /usr/local/tomcat/webapps/*
+export OPENGROK_TOMCAT_BASE=${OPENGROK_TOMCAT_BASE:-/usr/local/tomcat}
+tomcat_on
 
 OpenGrok deploy
 
-mv /usr/local/tomcat/webapps/source /usr/local/tomcat/webapps/ROOT
+find ${OPENGROK_TOMCAT_BASE}/webapps/ -type d -mindepth 1 -maxdepth 1 ! -name source -exec rm -rf {} \;
+mv ${OPENGROK_TOMCAT_BASE}/webapps/source.war ${OPENGROK_TOMCAT_BASE}/webapps/ROOT.war
 
 rm opengrok.tar.gz
 rm -rf /var/cache/apk/*
