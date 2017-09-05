@@ -15,7 +15,11 @@ mv /usr/local/opengrok* /usr/local/opengrok
 init
 tomcat_on
 
+rm -rf /usr/local/tomcat/webapps/*
+
 OpenGrok deploy
+
+mv /usr/local/tomcat/webapps/source /usr/local/tomcat/webapps/ROOT
 
 rm opengrok.tar.gz
 rm -rf /var/cache/apk/*
