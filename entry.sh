@@ -4,4 +4,14 @@ if [[ "${DOCKER_DEBUG}" == "1" ]]; then
     set -x
 fi
 
-tail -f /dev/null
+cat << EOF > pyspider.json
+{
+    "webui": {
+        "username": "${USERNAME}",
+        "password": "${PASSWORD}",
+        "need-auth": true
+    }
+}
+EOF
+
+pyspider -c pyspider.json
