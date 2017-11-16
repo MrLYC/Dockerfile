@@ -35,6 +35,8 @@ apt-get install -y libcurl4-openssl-dev
 export PYCURL_SSL_LIBRARY=openssl
 pip install pyspider
 
+mkdir -p /opt/pyspider
+
 rm -rf /root/.cache/pip || true
 rm -rf /var/lib/apt/lists/* || true
 apt-get clean

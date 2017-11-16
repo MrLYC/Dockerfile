@@ -6,10 +6,14 @@ fi
 
 cat << EOF > pyspider.json
 {
+    "taskdb": "${TASKDB}",
+    "projectdb": "${PROJECTDB}",
+    "resultdb": "${RESULTDB}",
+    "message_queue": "${MESSAGEQ}",
     "webui": {
         "username": "${USERNAME}",
         "password": "${PASSWORD}",
-        "need-auth": true
+        "need-auth": ${NEEDAUTH}
     }
 }
 EOF
