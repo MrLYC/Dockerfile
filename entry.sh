@@ -18,4 +18,4 @@ cat << EOF > pyspider.json
 }
 EOF
 
-pyspider -c pyspider.json
+pyspider "$@"

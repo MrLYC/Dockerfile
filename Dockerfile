@@ -25,3 +25,4 @@ RUN ["/build.sh"]
 VOLUME ["/opt/pyspider"]
 
 ENTRYPOINT ["/entry.sh"]
+CMD ["-c", "pyspider.json"]
