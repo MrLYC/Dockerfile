@@ -9,9 +9,9 @@ ENV DOCKER_DEBUG 0
 ENV NEEDAUTH true
 ENV USERNAME mrlyc
 ENV PASSWORD pass
-ENV TASKDB sqlite+taskdb:///opt/spider/task.db
-ENV PROJECTDB sqlite+taskdb:///opt/spider/project.db
-ENV RESULTDB sqlite+taskdb:///opt/spider/result.db
+ENV TASKDB ""
+ENV PROJECTDB ""
+ENV RESULTDB ""
 ENV MESSAGEQ ""
 
 ENV LANG C.UTF-8
