@@ -3,6 +3,7 @@
 set -x
 apk update
 
+apk add net-snmp 
+
 rm -rf /var/cache/apk/*
 rm -f /build.sh || true
-apk info | grep -v apk | xargs -i apk del {} || true
