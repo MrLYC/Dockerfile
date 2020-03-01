@@ -5,8 +5,7 @@ COPY . .
 RUN go mod download
 RUN go build -o app .
 
-FROM nginx:alpine
-RUN apk --no-cache add ca-certificates
+FROM alpine
 WORKDIR /
 
 ENV GIN_MODE release
