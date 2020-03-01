@@ -1,12 +1,15 @@
-FROM alpine
-
-MAINTAINER lyc <imyikong@gmail.com>
-
-ADD build.sh /build.sh
-ADD entry.sh /entry.sh
-ENV DOCKER_DEBUG 0
-
+FROM golang:1.13.3 as builder
 WORKDIR /
-RUN ["/build.sh"]
 
-ENTRYPOINT ["/entry.sh"]
+COPY . .
+RUN go mod download
+RUN go build -o app .
+
+FROM nginx:alpine
+RUN apk --no-cache add ca-certificates
+WORKDIR /
+
+ENV GIN_MODE release
+COPY --from=builder app .
+
+ENTRYPOINT ["./app"]
