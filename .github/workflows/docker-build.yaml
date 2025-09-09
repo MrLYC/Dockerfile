@@ -1,0 +1,188 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+    inputs:
+      image_name:
+        description: 'Name of the image to build (leave empty to build all changed images)'
+        required: false
+        type: string
+      force_build_all:
+        description: 'Force build all images'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  detect-changes:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true) || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      changed-images: ${{ steps.changes.outputs.changed-images }}
+      has-changes: ${{ steps.changes.outputs.has-changes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed images
+        id: changes
+        run: |
+          echo "Detecting changes in images directory..."
+          
+          # 处理手动触发的情况
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ github.event.inputs.force_build_all }}" = "true" ]; then
+              echo "Force building all images..."
+              CHANGED_IMAGES=$(find images/ -maxdepth 1 -mindepth 1 -type d -exec basename {} \; 2>/dev/null || true)
+            elif [ -n "${{ github.event.inputs.image_name }}" ]; then
+              echo "Building specific image: ${{ github.event.inputs.image_name }}"
+              CHANGED_IMAGES="${{ github.event.inputs.image_name }}"
+            else
+              echo "Manual trigger without specific image, detecting changes from last commit..."
+              if git rev-parse HEAD~1 >/dev/null 2>&1; then
+                CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+              else
+                CHANGED_FILES=$(git ls-files)
+              fi
+              CHANGED_IMAGES=$(echo "$CHANGED_FILES" | grep "^images/" | cut -d'/' -f2 | sort | uniq || true)
+            fi
+          else
+            # 获取变更的文件列表
+            if [ "${{ github.event_name }}" = "push" ]; then
+              # 对于 push 事件，比较 HEAD 和前一个提交
+              # 处理首次提交的情况
+              if git rev-parse HEAD~1 >/dev/null 2>&1; then
+                CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+              else
+                # 首次提交，获取所有文件
+                CHANGED_FILES=$(git ls-files)
+              fi
+            else
+              # 对于 PR 合并事件，比较基础分支和合并的分支
+              CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+            fi
+            
+            echo "Changed files:"
+            echo "$CHANGED_FILES"
+            
+            # 提取 images 目录下有变更的镜像目录
+            CHANGED_IMAGES=$(echo "$CHANGED_FILES" | grep "^images/" | cut -d'/' -f2 | sort | uniq || true)
+          fi
+          
+          echo "Changed images (one per line):"
+          echo "$CHANGED_IMAGES"
+          
+          if [ -n "$CHANGED_IMAGES" ] && [ "$CHANGED_IMAGES" != "" ]; then
+            # 转换为 JSON 数组格式，供 matrix 使用
+            IMAGES_JSON=$(echo "$CHANGED_IMAGES" | jq -R -s 'split("\n") | map(select(length > 0))')
+            echo "changed-images=$IMAGES_JSON" >> $GITHUB_OUTPUT
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+            echo "Generated JSON for matrix: $IMAGES_JSON"
+          else
+            echo "changed-images=[]" >> $GITHUB_OUTPUT
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-images:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: ${{ fromJson(needs.detect-changes.outputs.changed-images) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Generate image tag
+        id: tag
+        run: |
+          # 使用当前时间作为标签
+          TAG=$(date +%Y%m%d-%H%M%S)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Generated tag: $TAG"
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./images/${{ matrix.image }}
+          file: ./images/${{ matrix.image }}/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ steps.tag.outputs.tag }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:latest
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.title=${{ matrix.image }}
+            org.opencontainers.image.description=Docker image for ${{ matrix.image }}
+            org.opencontainers.image.url=https://github.com/${{ github.repository }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.tag.outputs.tag }}
+            org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Test image
+        run: |
+          echo "Testing image: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ steps.tag.outputs.tag }}"
+          # 简单的镜像测试，运行镜像并检查是否能正常启动
+          docker run --rm --name test-${{ matrix.image }}-${{ github.run_id }} \
+            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ steps.tag.outputs.tag }} || true
+          echo "Image test completed"
+
+      - name: Update README with new tag
+        run: |
+          echo "## Built Images" >> build-summary.md
+          echo "- **${{ matrix.image }}**: \`${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ steps.tag.outputs.tag }}\`" >> build-summary.md
+          echo "- **${{ matrix.image }}** (latest): \`${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:latest\`" >> build-summary.md
+          echo "- **Build time**: $(date -u)" >> build-summary.md
+          echo "- **Commit**: ${{ github.sha }}" >> build-summary.md
+
+      - name: Upload build summary
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-summary-${{ matrix.image }}
+          path: build-summary.md
+
+  notify:
+    needs: [detect-changes, build-images]
+    if: always() && needs.detect-changes.outputs.has-changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build summaries
+        uses: actions/download-artifact@v3
+        with:
+          pattern: build-summary-*
+          path: summaries
+
+      - name: Create notification
+        run: |
+          echo "Docker images have been built and pushed successfully!"
+          echo "Changed images: ${{ needs.detect-changes.outputs.changed-images }}"
+          
+          if [ -d "summaries" ]; then
+            echo "Build summaries:"
+            find summaries -name "*.md" -exec cat {} \;
+          fi

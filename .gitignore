@@ -291,3 +291,18 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Docker
+.dockerignore
+
+# Build artifacts
+build-summary*.md
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local test files
+test-output/
