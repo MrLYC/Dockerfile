@@ -159,7 +159,7 @@ jobs:
           echo "- **Commit**: ${{ github.sha }}" >> build-summary.md
 
       - name: Upload build summary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-summary-${{ matrix.image }}
           path: build-summary.md
@@ -170,10 +170,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download build summaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           pattern: build-summary-*
           path: summaries
+          merge-multiple: true
 
       - name: Create notification
         run: |
