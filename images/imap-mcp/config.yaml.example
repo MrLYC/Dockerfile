@@ -1,0 +1,40 @@
+# IMAP MCP Server Configuration Example
+# Copy this file to config.yaml and fill in your actual values
+
+imap:
+  host: imap.gmail.com          # IMAP server hostname
+  port: 993                     # IMAP server port (993 for SSL)
+  username: your-email@gmail.com # Your email address
+  use_ssl: true                 # Use SSL connection
+  
+  # For OAuth2 authentication (recommended for Gmail)
+  oauth2:
+    client_id: YOUR_CLIENT_ID
+    client_secret: YOUR_CLIENT_SECRET
+    refresh_token: YOUR_REFRESH_TOKEN
+  
+  # Alternative: Basic authentication (use app-specific password)
+  # password: your-app-specific-password
+
+# MCP Server settings
+server:
+  name: "imap-mcp"
+  version: "1.0.0"
+
+# Logging configuration
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Optional: Folder access restrictions
+folders:
+  # Limit access to specific folders for security
+  allowed:
+    - INBOX
+    - Sent
+    - Drafts
+    - Trash
+  # Folders to exclude from access
+  excluded:
+    - "[Gmail]/All Mail"
+    - "[Gmail]/Spam"
