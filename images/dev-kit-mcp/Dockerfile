@@ -9,8 +9,7 @@ WORKDIR /app
 
 # Clone the repository and checkout a specific working version
 # Using commit before the API breaking changes
-RUN git clone https://github.com/nguyenvanduocit/dev-kit.git . && \
-    git checkout v1.2.0
+RUN git clone https://github.com/nguyenvanduocit/dev-kit.git .
 
 # Set Go environment
 ENV GO111MODULE=on
