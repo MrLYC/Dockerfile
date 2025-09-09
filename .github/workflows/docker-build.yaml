@@ -116,8 +116,8 @@ jobs:
       - name: Generate image tag
         id: tag
         run: |
-          # 使用当前时间作为标签
-          TAG=$(date +%Y%m%d-%H%M%S)
+          # 使用 Git commit SHA 的前8位作为标签，更稳定且有意义
+          TAG=$(echo "${{ github.sha }}" | cut -c1-8)
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "Generated tag: $TAG"
 
@@ -130,6 +130,7 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ steps.tag.outputs.tag }}
             ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:latest
+            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ github.ref_name }}
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
