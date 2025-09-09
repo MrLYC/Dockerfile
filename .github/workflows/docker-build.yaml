@@ -83,8 +83,8 @@ jobs:
           echo "$CHANGED_IMAGES"
           
           if [ -n "$CHANGED_IMAGES" ] && [ "$CHANGED_IMAGES" != "" ]; then
-            # 转换为 JSON 数组格式，供 matrix 使用
-            IMAGES_JSON=$(echo "$CHANGED_IMAGES" | jq -R -s 'split("\n") | map(select(length > 0))')
+            # 转换为一行 JSON 数组格式，供 matrix 使用
+            IMAGES_JSON=$(echo "$CHANGED_IMAGES" | jq -R -s 'split("\n") | map(select(length > 0))' | jq -c)
             echo "changed-images=$IMAGES_JSON" >> $GITHUB_OUTPUT
             echo "has-changes=true" >> $GITHUB_OUTPUT
             echo "Generated JSON for matrix: $IMAGES_JSON"
