@@ -1,20 +1,11 @@
-# Multi-stage build for dev-kit MCP server
+# Simple build for dev-kit MCP server using official installation method
 FROM golang:1.23.2-alpine AS builder
 
-# Install git and other build dependencies
-RUN apk add --no-cache git ca-certificates
+# Install ca-certificates for HTTPS requests
+RUN apk add --no-cache ca-certificates
 
-# Set working directory
-WORKDIR /app
-
-# Clone the dev-kit repository
-RUN git clone https://github.com/nguyenvanduocit/dev-kit.git .
-
-# Download dependencies
-RUN go mod download
-
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o dev-kit .
+# Install dev-kit using the official recommended method
+RUN go install github.com/nguyenvanduocit/dev-kit@latest
 
 # Final stage - minimal runtime image
 FROM alpine:latest
@@ -29,10 +20,7 @@ RUN addgroup -g 1001 -S devkit && \
 WORKDIR /app
 
 # Copy the binary from builder stage
-COPY --from=builder /app/dev-kit .
-
-# Create directory for environment file
-RUN mkdir -p /app/config
+COPY --from=builder /go/bin/dev-kit .
 
 # Change ownership to non-root user
 RUN chown -R devkit:devkit /app
