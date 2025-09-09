@@ -142,14 +142,6 @@ jobs:
             org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
             org.opencontainers.image.revision=${{ github.sha }}
 
-      - name: Test image
-        run: |
-          echo "Testing image: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ steps.tag.outputs.tag }}"
-          # 简单的镜像测试，运行镜像并检查是否能正常启动
-          docker run --rm --name test-${{ matrix.image }}-${{ github.run_id }} \
-            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ steps.tag.outputs.tag }} || true
-          echo "Image test completed"
-
       - name: Update README with new tag
         run: |
           echo "## Built Images" >> build-summary.md
