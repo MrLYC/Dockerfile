@@ -2,6 +2,8 @@
 
 这个 Docker 镜像包含了 [dev-kit](https://github.com/nguyenvanduocit/dev-kit) MCP (Model Context Protocol) 服务器，它允许 AI 模型与各种开发工具进行结构化和安全的交互。
 
+> **注意**: 由于最新版本存在编译问题，此镜像使用 v1.2.0 版本构建，该版本已知稳定工作。
+
 ## 功能特性
 
 - **Atlassian 集成**: Jira 和 Confluence 支持
