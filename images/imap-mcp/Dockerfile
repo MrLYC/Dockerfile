@@ -6,7 +6,8 @@ RUN apk add --no-cache \
     build-base \
     libffi-dev \
     openssl-dev \
-    curl
+    curl \
+    git
 
 # Install uv package manager
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -29,7 +30,8 @@ FROM python:3.11-alpine
 RUN apk add --no-cache \
     ca-certificates \
     libffi \
-    openssl
+    openssl \
+    curl
 
 # Install uv for runtime
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
