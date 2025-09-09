@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  # Development Environment
+  devteam:
+    image: devteam:latest
+    container_name: devteam-workspace
+    ports:
+      - "8080:8080"    # VS Code Server
+      - "8888:8888"    # Jupyter Lab
+      - "3000:3000"    # Frontend dev server (React/Vue/Angular)
+      - "3001:3001"    # Additional frontend port
+      - "4200:4200"    # Angular CLI dev server
+      - "5000:5000"    # Flask/Python backend
+      - "8000:8000"    # FastAPI/Django/Go backend
+      - "9000:9000"    # Additional service port
+    volumes:
+      # Mount current directory as workspace
+      - .:/workspace
+      # Persist user home directory
+      - devteam-home:/home/devteam
+      # Docker-in-Docker support
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Git configuration
+      - ~/.gitconfig:/home/devteam/.gitconfig:ro
+      # SSH keys for Git operations
+      - ~/.ssh:/home/devteam/.ssh:ro
+      # AWS credentials (if needed)
+      # - ~/.aws:/home/devteam/.aws:ro
+    environment:
+      - GIT_USER_NAME=Your Name
+      - GIT_USER_EMAIL=your.email@example.com
+      - NODE_ENV=development
+      - PYTHONPATH=/workspace
+    command: code-server
+    restart: unless-stopped
+    # Uncomment for debugging
+    # stdin_open: true
+    # tty: true
+
+  # PostgreSQL Database for Development
+  postgres:
+    image: postgres:15-alpine
+    container_name: devteam-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: devdb
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpass
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Redis for Caching/Sessions
+  redis:
+    image: redis:7-alpine
+    container_name: devteam-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  # MongoDB for Document Storage
+  mongo:
+    image: mongo:7
+    container_name: devteam-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: adminpass
+      MONGO_INITDB_DATABASE: devdb
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+  # Nginx for Local Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: devteam-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      # - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - devteam
+    restart: unless-stopped
+    # Uncomment if you have custom nginx config
+
+volumes:
+  devteam-home:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  mongo-data:
+    driver: local
+
+# Example network configuration
+networks:
+  default:
+    name: devteam-network
+    driver: bridge
