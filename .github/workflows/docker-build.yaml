@@ -4,13 +4,11 @@ on:
   push:
     branches:
       - master
-      - main
   pull_request:
     types:
       - closed
     branches:
       - master
-      - main
   workflow_dispatch:
     inputs:
       image_name:
