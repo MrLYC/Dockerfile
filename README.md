@@ -12,6 +12,7 @@
 ├── .github/
 │   └── workflows/
 │       └── docker-build.yaml # GitHub Actions 自动构建配置
+├── image-requests.txt        # 手动指定需要构建的镜像列表
 ├── build-images.sh           # 本地构建脚本
 ├── create-image.sh           # 新镜像创建脚本
 ├── test-images.sh            # 镜像测试脚本
@@ -130,9 +131,34 @@
 当代码合并到主分支时，GitHub Actions 会自动：
 
 1. 检测 `images/` 目录下哪些镜像发生了变更
-2. 自动构建变更的镜像
-3. 使用当前时间作为标签推送到 Docker Hub
-4. 同时更新 `latest` 标签
+2. 读取 `image-requests.txt` 文件中指定的额外镜像列表
+3. 合并变更检测和手动请求的镜像列表
+4. 自动构建所有需要构建的镜像
+5. 使用当前时间作为标签推送到 Docker Hub
+6. 同时更新 `latest` 标签
+
+#### 手动指定构建镜像
+
+除了自动检测变更外，您还可以通过 `image-requests.txt` 文件手动指定需要重新构建的镜像：
+
+1. 编辑项目根目录下的 `image-requests.txt` 文件
+2. 每行添加一个镜像名称（对应 `images/` 目录下的子目录名）
+3. 以 `#` 开头的行为注释，空行会被忽略
+4. 提交文件更改到仓库
+
+示例 `image-requests.txt` 内容：
+```
+# 需要重新构建的镜像列表
+alpine-sshd
+jupyter
+minio
+```
+
+这样即使这些镜像的代码没有变更，GitHub Actions 也会重新构建它们。这对于以下场景很有用：
+- 基础镜像更新后需要重新构建
+- 修复安全漏洞
+- 更新依赖包版本
+- 定期重新构建镜像以获取最新补丁
 
 ## 配置要求
 
