@@ -8,39 +8,31 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # GitHub Configuration
+      # GitHub Configuration (Required)
       GITHUB_TOKEN: ${GITHUB_TOKEN}
       GITHUB_ORG: ${GITHUB_ORG}
-      # GITHUB_ENTERPRISE_URL: ${GITHUB_ENTERPRISE_URL}
-      
+      GITHUB_API_SCOPE: ${GITHUB_API_SCOPE:-organization}
+
+      # GitHub Enterprise (Optional)
+      # GITHUB_ENTERPRISE_NAME: ${GITHUB_ENTERPRISE_NAME}
+
       # Dashboard Configuration
-      DASHBOARD_TITLE: "Copilot Metrics Dashboard"
+      NODE_ENV: production
       PORT: 3000
       HOST: "0.0.0.0"
-      NODE_ENV: production
-      
-      # Data Configuration
-      REFRESH_INTERVAL: 300000
-      DATA_RETENTION_DAYS: 90
-      
-      # Authentication (optional)
-      AUTH_ENABLED: false
-      # AUTH_GITHUB_CLIENT_ID: ${AUTH_GITHUB_CLIENT_ID}
-      # AUTH_GITHUB_CLIENT_SECRET: ${AUTH_GITHUB_CLIENT_SECRET}
-      
-      # Database
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/copilot_metrics
-      
-      # Redis Cache
-      REDIS_URL: redis://redis:6379
-      
-      # Security
-      SESSION_SECRET: ${SESSION_SECRET:-your-random-session-secret}
-      CORS_ORIGINS: "http://localhost:3000"
-      
+
+      # Features
+      ENABLE_SEATS_FEATURE: ${ENABLE_SEATS_FEATURE:-true}
+      ENABLE_SEATS_INGESTION: ${ENABLE_SEATS_INGESTION:-true}
+
+      # Database (Optional - uses embedded SQLite if not specified)
+      # DATABASE_URL: postgresql://postgres:password@postgres:5432/copilot_metrics
+
+      # Redis Cache (Optional)
+      # REDIS_URL: redis://redis:6379
+
       # Logging
       LOG_LEVEL: info
-      LOG_FORMAT: json
     volumes:
       - dashboard-data:/app/data
       - dashboard-logs:/app/logs

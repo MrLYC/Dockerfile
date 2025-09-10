@@ -63,11 +63,12 @@ docker-compose -f docker-compose.example.yml up -d
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `GITHUB_ENTERPRISE_URL` | GitHub Enterprise Server URL | - |
+| `GITHUB_ENTERPRISE_NAME` | GitHub Enterprise name | - |
+| `GITHUB_API_SCOPE` | API scope (organization/enterprise) | `organization` |
+| `ENABLE_SEATS_FEATURE` | Enable seats feature | `true` |
+| `ENABLE_SEATS_INGESTION` | Enable seats data ingestion | `true` |
 | `PORT` | Application port | `3000` |
-| `DASHBOARD_TITLE` | Dashboard title | `Copilot Metrics Dashboard` |
-| `REFRESH_INTERVAL` | Data refresh interval (ms) | `300000` |
-| `DATA_RETENTION_DAYS` | Data retention period | `90` |
+| `NODE_ENV` | Node environment | `production` |
 
 ### Authentication (Optional)
 
