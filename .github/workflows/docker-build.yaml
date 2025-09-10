@@ -82,9 +82,49 @@ jobs:
           echo "Changed images (one per line):"
           echo "$CHANGED_IMAGES"
           
+          # 动态过滤：只保留实际存在且有效的镜像目录
+          if [ -n "$CHANGED_IMAGES" ]; then
+            echo "Validating detected images..."
+            FILTERED_IMAGES=""
+            TOTAL_DETECTED=0
+            VALID_COUNT=0
+            
+            for img in $CHANGED_IMAGES; do
+              TOTAL_DETECTED=$((TOTAL_DETECTED + 1))
+              echo "  Checking image: $img"
+              
+              # 检查镜像目录是否实际存在
+              if [ ! -d "images/$img" ]; then
+                echo "    ❌ Directory not found: images/$img"
+                continue
+              fi
+              
+              # 检查是否有Dockerfile
+              if [ ! -f "images/$img/Dockerfile" ]; then
+                echo "    ❌ Dockerfile not found: images/$img/Dockerfile"
+                continue
+              fi
+              
+              echo "    ✅ Valid image: $img"
+              VALID_COUNT=$((VALID_COUNT + 1))
+              
+              if [ -n "$FILTERED_IMAGES" ]; then
+                FILTERED_IMAGES="$FILTERED_IMAGES\n$img"
+              else
+                FILTERED_IMAGES="$img"
+              fi
+            done
+            
+            echo "Validation summary: $VALID_COUNT/$TOTAL_DETECTED images are valid"
+            CHANGED_IMAGES="$FILTERED_IMAGES"
+          fi
+          
+          echo "Final valid images (one per line):"
+          echo -e "$CHANGED_IMAGES"
+          
           if [ -n "$CHANGED_IMAGES" ] && [ "$CHANGED_IMAGES" != "" ]; then
             # 转换为一行 JSON 数组格式，供 matrix 使用
-            IMAGES_JSON=$(echo "$CHANGED_IMAGES" | jq -R -s 'split("\n") | map(select(length > 0))' | jq -c)
+            IMAGES_JSON=$(echo -e "$CHANGED_IMAGES" | jq -R -s 'split("\n") | map(select(length > 0))' | jq -c)
             echo "changed-images=$IMAGES_JSON" >> $GITHUB_OUTPUT
             echo "has-changes=true" >> $GITHUB_OUTPUT
             echo "Generated JSON for matrix: $IMAGES_JSON"

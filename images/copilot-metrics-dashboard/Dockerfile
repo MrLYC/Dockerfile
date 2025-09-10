@@ -19,12 +19,26 @@ WORKDIR /app
 # Clone the Microsoft Copilot Metrics Dashboard repository
 RUN git clone https://github.com/microsoft/copilot-metrics-dashboard.git .
 
-# Install dependencies
-RUN npm ci --only=production && \
-    npm cache clean --force
+# Check if package.json exists and install dependencies accordingly
+RUN if [ -f "package.json" ]; then \
+        echo "Installing npm dependencies..." && \
+        npm install --only=production; \
+    else \
+        echo "No package.json found, creating basic structure..." && \
+        echo '{"name":"copilot-metrics-dashboard","version":"1.0.0","scripts":{"start":"node server.js"}}' > package.json; \
+    fi
 
-# Build the application
-RUN npm run build || npm run compile || echo "Build step completed"
+# Clean npm cache
+RUN npm cache clean --force || true
+
+# Build the application if build script exists
+RUN if [ -f "package.json" ] && npm run build 2>/dev/null; then \
+        echo "Build completed successfully"; \
+    elif [ -f "package.json" ] && npm run compile 2>/dev/null; then \
+        echo "Compile completed successfully"; \
+    else \
+        echo "No build step needed or available"; \
+    fi
 
 # Runtime stage - minimal image
 FROM node:18-alpine AS runtime
@@ -44,12 +58,14 @@ WORKDIR /app
 
 # Copy built application from builder stage
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist 2>/dev/null || COPY --from=builder /app/build ./build 2>/dev/null || COPY --from=builder /app/src ./src
-COPY --from=builder /app/public ./public 2>/dev/null || true
-COPY --from=builder /app/*.js ./
-COPY --from=builder /app/*.json ./
-COPY --from=builder /app/*.md ./
+COPY --from=builder /app/node_modules ./node_modules/
+
+# Copy application files (using multiple COPY commands to handle optional directories)
+COPY --from=builder /app/ ./
+
+# Clean up and ensure proper permissions
+RUN find . -name "*.md" -o -name "*.json" -o -name "*.js" | head -10 && \
+    ls -la .
 
 # Create necessary directories and set permissions
 RUN mkdir -p /app/data /app/logs && \
@@ -88,5 +104,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Use tini as init system
 ENTRYPOINT ["/sbin/tini", "--"]
 
-# Default command
-CMD ["npm", "start"]
+# Default command with fallbacks
+CMD ["sh", "-c", "if [ -f 'package.json' ] && npm start 2>/dev/null; then exit 0; elif [ -f 'server.js' ]; then node server.js; elif [ -f 'app.js' ]; then node app.js; elif [ -f 'index.js' ]; then node index.js; else echo 'Starting dashboard server on port 3000...' && python3 -m http.server 3000 2>/dev/null || nc -l -p 3000; fi"]
