@@ -21,11 +21,11 @@ RUN git clone https://github.com/microsoft/copilot-metrics-dashboard.git .
 
 # Check if package.json exists and install dependencies accordingly
 RUN if [ -f "package.json" ]; then \
-        echo "Installing npm dependencies..." && \
-        npm install --only=production; \
+    echo "Installing npm dependencies..." && \
+    npm install --only=production; \
     else \
-        echo "No package.json found, creating basic structure..." && \
-        echo '{"name":"copilot-metrics-dashboard","version":"1.0.0","scripts":{"start":"node server.js"}}' > package.json; \
+    echo "No package.json found, creating basic structure..." && \
+    echo '{"name":"copilot-metrics-dashboard","version":"1.0.0","scripts":{"start":"node server.js"}}' > package.json; \
     fi
 
 # Clean npm cache
@@ -33,11 +33,11 @@ RUN npm cache clean --force || true
 
 # Build the application if build script exists
 RUN if [ -f "package.json" ] && npm run build 2>/dev/null; then \
-        echo "Build completed successfully"; \
+    echo "Build completed successfully"; \
     elif [ -f "package.json" ] && npm run compile 2>/dev/null; then \
-        echo "Compile completed successfully"; \
+    echo "Compile completed successfully"; \
     else \
-        echo "No build step needed or available"; \
+    echo "No build step needed or available"; \
     fi
 
 # Runtime stage - minimal image
