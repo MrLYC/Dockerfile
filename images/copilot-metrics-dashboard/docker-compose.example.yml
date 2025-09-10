@@ -1,0 +1,155 @@
+version: '3.8'
+
+services:
+  # Copilot Metrics Dashboard
+  copilot-dashboard:
+    image: copilot-metrics-dashboard:latest
+    container_name: copilot-metrics-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      # GitHub Configuration
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_ORG: ${GITHUB_ORG}
+      # GITHUB_ENTERPRISE_URL: ${GITHUB_ENTERPRISE_URL}
+      
+      # Dashboard Configuration
+      DASHBOARD_TITLE: "Copilot Metrics Dashboard"
+      PORT: 3000
+      HOST: "0.0.0.0"
+      NODE_ENV: production
+      
+      # Data Configuration
+      REFRESH_INTERVAL: 300000
+      DATA_RETENTION_DAYS: 90
+      
+      # Authentication (optional)
+      AUTH_ENABLED: false
+      # AUTH_GITHUB_CLIENT_ID: ${AUTH_GITHUB_CLIENT_ID}
+      # AUTH_GITHUB_CLIENT_SECRET: ${AUTH_GITHUB_CLIENT_SECRET}
+      
+      # Database
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/copilot_metrics
+      
+      # Redis Cache
+      REDIS_URL: redis://redis:6379
+      
+      # Security
+      SESSION_SECRET: ${SESSION_SECRET:-your-random-session-secret}
+      CORS_ORIGINS: "http://localhost:3000"
+      
+      # Logging
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+    volumes:
+      - dashboard-data:/app/data
+      - dashboard-logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - copilot-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: copilot-postgres
+    environment:
+      POSTGRES_DB: copilot_metrics
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - copilot-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: copilot-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - copilot-network
+
+  # Nginx Reverse Proxy (optional)
+  nginx:
+    image: nginx:alpine
+    container_name: copilot-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - copilot-dashboard
+    restart: unless-stopped
+    networks:
+      - copilot-network
+
+  # Prometheus for Monitoring (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: copilot-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - copilot-network
+
+  # Grafana for Visualization (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: copilot-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-github-datasource
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - copilot-network
+
+volumes:
+  dashboard-data:
+    driver: local
+  dashboard-logs:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  copilot-network:
+    name: copilot-metrics-network
+    driver: bridge
