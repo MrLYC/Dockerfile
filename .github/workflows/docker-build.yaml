@@ -55,6 +55,20 @@ jobs:
                 CHANGED_FILES=$(git ls-files)
               fi
               CHANGED_IMAGES=$(echo "$CHANGED_FILES" | grep "^images/" | cut -d'/' -f2 | sort | uniq || true)
+              
+              # 对于手动触发，也检查 image-requests.txt
+              if [ -f "image-requests.txt" ]; then
+                echo "Also reading image-requests.txt for manual trigger..."
+                REQUESTED_IMAGES=$(grep -v "^#" image-requests.txt | grep -v "^$" | tr '\n' ' ' || true)
+                if [ -n "$REQUESTED_IMAGES" ]; then
+                  echo "Requested images from file: $REQUESTED_IMAGES"
+                  if [ -n "$CHANGED_IMAGES" ]; then
+                    CHANGED_IMAGES="$CHANGED_IMAGES $REQUESTED_IMAGES"
+                  else
+                    CHANGED_IMAGES="$REQUESTED_IMAGES"
+                  fi
+                fi
+              fi
             fi
           else
             # 获取变更的文件列表
@@ -82,6 +96,28 @@ jobs:
           echo "Changed images (one per line):"
           echo "$CHANGED_IMAGES"
           
+          # 读取 image-requests.txt 文件中指定的镜像
+          REQUESTED_IMAGES=""
+          if [ -f "image-requests.txt" ]; then
+            echo "Reading image-requests.txt..."
+            # 读取文件，忽略空行和注释行
+            REQUESTED_IMAGES=$(grep -v "^#" image-requests.txt | grep -v "^$" | tr '\n' ' ' || true)
+            if [ -n "$REQUESTED_IMAGES" ]; then
+              echo "Requested images from file: $REQUESTED_IMAGES"
+              # 合并检测到的变更和请求的镜像
+              if [ -n "$CHANGED_IMAGES" ]; then
+                CHANGED_IMAGES="$CHANGED_IMAGES $REQUESTED_IMAGES"
+              else
+                CHANGED_IMAGES="$REQUESTED_IMAGES"
+              fi
+              echo "Combined images: $CHANGED_IMAGES"
+            else
+              echo "image-requests.txt exists but contains no valid entries"
+            fi
+          else
+            echo "image-requests.txt not found, using only detected changes"
+          fi
+          
           # 动态过滤：只保留实际存在且有效的镜像目录
           if [ -n "$CHANGED_IMAGES" ]; then
             echo "Validating detected images..."
@@ -89,7 +125,10 @@ jobs:
             TOTAL_DETECTED=0
             VALID_COUNT=0
             
-            for img in $CHANGED_IMAGES; do
+            # 去重处理
+            UNIQUE_IMAGES=$(echo "$CHANGED_IMAGES" | tr ' ' '\n' | sort | uniq)
+            
+            for img in $UNIQUE_IMAGES; do
               TOTAL_DETECTED=$((TOTAL_DETECTED + 1))
               echo "  Checking image: $img"
               
