@@ -95,33 +95,6 @@ ENTRYPOINT ["./<二进制文件>"]
 CMD ["--help"]
 ```
 
-## MCP 服务器特定指引
-
-### 配置管理
-- 提供包含所有必需环境变量的 `.env.example`
-- 同时支持环境变量和配置文件
-- 记录 OAuth2 设置（如 Gmail、GitHub 等服务）
-
-### 常用环境变量
-```bash
-# 服务特定凭据
-GITHUB_TOKEN=
-GITLAB_TOKEN=
-ATLASSIAN_HOST=
-ATLASSIAN_EMAIL=
-ATLASSIAN_TOKEN=
-
-# 可选配置
-PROXY_URL=
-ENABLE_TOOLS=
-PORT=8080
-```
-
-### 协议支持
-MCP 服务器应支持两种协议：
-- **STDIO**: Claude Desktop 集成的默认协议
-- **SSE**: 基于 HTTP 的 Web 集成
-
 ## GitHub Actions 集成
 
 ### 构建策略
@@ -181,21 +154,24 @@ docker run --rm <镜像名>-test
 docker run --rm -v $(pwd):/workspace <镜像名>-test
 ```
 
-### 与 Claude Desktop 集成
-每个 MCP 服务器应提供 Claude Desktop 配置示例：
-```json
-{
-  "mcpServers": {
-    "<服务器名>": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-v", "/路径/到/配置:/app/config:ro",
-        "<docker-用户名>/<镜像名>:latest"
-      ]
-    }
-  }
-}
+### 自动创建 GitHub Pull Request
+如果我提到需要创建一个 Pull Request，执行类似的命令，注意要自动填充 title 和 body 参数，使用 web 页面打开：
+```bash
+$ gh pr create --title "Remove failed docker image builds" --body "Removed 17 failed image directories based on GitHub Actions build results (run #17589497811):
+
+**Removed images:**
+- chrome-vnc, httplive, kcptun, docker-utils
+- centos, hexo, devteam, kcptun-client
+- nextcloud, minicron, webcron, ubuntu
+- zabbix, webdav, sslocal, ipython, yapf
+
+These images had various build failures including missing Dockerfiles, dependency installation failures, and base image issues.
+
+**Preserved successful/working images:**
+- alpine-sshd, beanstalkd, copilot-metrics-dashboard
+- dev-kit-mcp, hello-world, imap-mcp, jupyter
+- lamptun, minio, opengrok, pyspider
+- snmpd, ssh-client, tox, versifier" --base master --head images --web
 ```
 
 ## 常见模式
