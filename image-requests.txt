@@ -9,3 +9,4 @@
 # minio
 # 
 # 注意：请确保镜像名称与 images/ 目录下的实际目录名称一致
+didatodolist-mcp
