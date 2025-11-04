@@ -17,8 +17,8 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # Clone the Microsoft Copilot Metrics Dashboard repository
-RUN git clone https://github.com/microsoft/copilot-metrics-dashboard.git .
-#RUN git clone -b fix-teams-filters https://github.com/sandeep0402/copilot-metrics-dashboard.git .
+#RUN git clone https://github.com/microsoft/copilot-metrics-dashboard.git .
+RUN git clone -b fix-teams-filters https://github.com/sandeep0402/copilot-metrics-dashboard.git .
 
 # Navigate to the dashboard directory where package.json is located
 WORKDIR /app/src/dashboard
