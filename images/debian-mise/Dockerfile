@@ -1,9 +1,8 @@
 FROM debian:12-slim
 
 RUN apt-get update  \
-    && apt-get -y --no-install-recommends install  \
-        # install any other dependencies you might need
-        sudo curl git ca-certificates build-essential \
+    && apt-get -y --no-install-recommends install \
+        sudo curl git ca-certificates build-essential bash \
     && rm -rf /var/lib/apt/lists/*
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -14,4 +13,9 @@ ENV MISE_INSTALL_PATH="/usr/local/bin/mise"
 ENV PATH="/mise/shims:$PATH"
 # ENV MISE_VERSION="..."
 
-RUN curl https://mise.run | sh
+RUN curl https://mise.run | bash \
+    && mkdir /mise
+
+ADD mise.toml /mise/config.toml
+
+CMD ["bash"]
