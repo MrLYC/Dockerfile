@@ -16,6 +16,7 @@ ENV PATH="/mise/shims:$PATH"
 ADD mise.toml /mise/config.toml
 
 RUN curl https://mise.run | bash \
+    && echo "eval \"\$(/usr/local/bin/mise activate bash)\"" >> /root/.bashrc \
     && mise install
 
 CMD ["bash"]
