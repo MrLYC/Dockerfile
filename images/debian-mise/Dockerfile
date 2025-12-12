@@ -13,9 +13,9 @@ ENV MISE_INSTALL_PATH="/usr/local/bin/mise"
 ENV PATH="/mise/shims:$PATH"
 # ENV MISE_VERSION="..."
 
-RUN curl https://mise.run | bash \
-    && mkdir /mise
-
 ADD mise.toml /mise/config.toml
+
+RUN curl https://mise.run | bash \
+    && mise install
 
 CMD ["bash"]
