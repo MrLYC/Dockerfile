@@ -1,5 +1,6 @@
 #!/bin/bash
 
-bunx oh-my-opencode install --no-tui --claude=no --chatgpt=no --gemini=no
+set -ex
 
-echo "build done!"
+bunx oh-my-opencode install --no-tui --claude=no --chatgpt=no --gemini=no
+npm install -g @studyzy/openspec-cn@latest
