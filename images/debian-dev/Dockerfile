@@ -27,4 +27,8 @@ RUN if [ -n "$proxy" ]; then \
     && mise doctor \
     && mise cache clear -y
 
+ADD build.sh /build.sh
+
+RUN /build.sh
+
 CMD ["bash"]

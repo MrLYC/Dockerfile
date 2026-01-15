@@ -2,4 +2,5 @@
 fnox = "latest"
 node = "24.2"
 python = "3.11"
-opencode = "1.1.21"
+opencode = "latest"
+bun = "latest"
