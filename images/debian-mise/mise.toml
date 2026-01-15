@@ -1,4 +1,2 @@
 [tools]
 fnox = "latest"
-node = "24.2"
-python = "3.11"
