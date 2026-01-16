@@ -41,4 +41,4 @@ RUN chown -R app:app /mise
 USER app
 RUN bash /build.sh
 
-CMD ["bash"]
+CMD ["opencode"]
