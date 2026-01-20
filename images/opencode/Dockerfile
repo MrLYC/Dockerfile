@@ -3,8 +3,7 @@ FROM debian:12-slim
 ARG proxy
 
 RUN apt-get update  \
-    && apt-get -y --no-install-recommends install \
-        sudo curl git ca-certificates build-essential bash \
+    && xargs -a Aptfile apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # 创建非 root 用户
@@ -22,12 +21,13 @@ ENV MISE_HTTP_TIMEOUT=120
 # ENV MISE_VERSION="..."
 
 ADD mise.toml /mise/config.toml
+ADD Aptfile /Aptfile
 
 RUN if [ -n "$proxy" ]; then \
         export http_proxy="$proxy" https_proxy="$proxy" HTTP_PROXY="$proxy" HTTPS_PROXY="$proxy"; \
     fi \
     && curl https://mise.run | bash \
-    && echo "eval \"\$(/usr/local/bin/mise activate bash)\"" >> /home/app/.bashrc \
+    && echo "eval \"$(/usr/local/bin/mise activate bash)\"" >> /home/app/.bashrc \
     && mise install \
     && mise doctor \
     && mise cache clear -y
