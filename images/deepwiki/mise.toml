@@ -1,0 +1,3 @@
+[tasks.deepwiki]
+description = "Generate DeepWiki docs and fix Mermaid diagrams"
+run = "bash /opt/deepwiki/deepwiki-task.sh"
