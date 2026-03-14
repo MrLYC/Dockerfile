@@ -2,8 +2,10 @@ FROM debian:12-slim
 
 ARG proxy
 
+ADD Aptfile /Aptfile
+
 RUN apt-get update  \
-    && xargs -a Aptfile apt-get install -y --no-install-recommends \
+    && xargs -a /Aptfile apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # 创建非 root 用户
@@ -21,7 +23,6 @@ ENV MISE_HTTP_TIMEOUT=120
 # ENV MISE_VERSION="..."
 
 ADD mise.toml /mise/config.toml
-ADD Aptfile /Aptfile
 
 RUN if [ -n "$proxy" ]; then \
         export http_proxy="$proxy" https_proxy="$proxy" HTTP_PROXY="$proxy" HTTPS_PROXY="$proxy"; \
