@@ -60,6 +60,19 @@
 2. 在子目录中创建 `Dockerfile`
 3. 提交代码到仓库
 
+#### 镜像构建配置
+
+镜像目录可以通过可选的 `build.env` 声明构建参数。当前支持的配置项是
+`PLATFORMS`，默认值为 `linux/amd64,linux/arm64`。例如，只有 amd64 安装
+介质的镜像可以在自己的目录中添加：
+
+```text
+PLATFORMS=linux/amd64
+```
+
+GitHub Actions 会通过通用配置解析器读取该文件，不需要为单个镜像增加
+workflow 分支；未提供配置的镜像继续使用默认双平台构建。
+
 ### 本地构建
 
 使用 `build-images.sh` 脚本进行本地构建：
