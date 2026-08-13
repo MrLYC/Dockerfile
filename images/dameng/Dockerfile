@@ -59,9 +59,36 @@ COPY dm-install.xml /opt/dm-install.xml
 RUN set -eux; \
     work_dir="$(mktemp -d /tmp/dm-download.XXXXXX)"; \
     trap 'rm -rf "$work_dir"' EXIT; \
-    curl --fail --location --retry 5 --retry-delay 5 --retry-all-errors \
-        --range 0- \
-        "$DM_PACKAGE_URL" --output "$work_dir/dm8.zip"; \
+    header_file="$work_dir/headers"; \
+    curl --fail --silent --show-error --location \
+        --retry 5 --retry-delay 5 --retry-all-errors \
+        --range 0-0 --dump-header "$header_file" \
+        "$DM_PACKAGE_URL" --output /dev/null; \
+    total_size="$(grep -i '^content-range:' "$header_file" | tail -n 1 | awk -F/ '{print $2}' | tr -d '\r')"; \
+    case "$total_size" in \
+        ''|*[!0-9]*) echo "unable to determine DM package size from Content-Range" >&2; exit 1 ;; \
+    esac; \
+    : > "$work_dir/dm8.zip"; \
+    chunk_size=$((16 * 1024 * 1024)); \
+    start=0; \
+    while [ "$start" -lt "$total_size" ]; do \
+        end=$((start + chunk_size - 1)); \
+        if [ "$end" -ge "$total_size" ]; then end=$((total_size - 1)); fi; \
+        part_file="$work_dir/part-$start"; \
+        curl --fail --silent --show-error --location \
+            --retry 5 --retry-delay 5 --retry-all-errors \
+            --range "$start-$end" "$DM_PACKAGE_URL" --output "$part_file"; \
+        expected_size=$((end - start + 1)); \
+        actual_size="$(stat -c '%s' "$part_file")"; \
+        if [ "$actual_size" -ne "$expected_size" ]; then \
+            echo "unexpected DM package chunk size: expected $expected_size, got $actual_size" >&2; \
+            exit 1; \
+        fi; \
+        cat "$part_file" >> "$work_dir/dm8.zip"; \
+        rm -f "$part_file"; \
+        start=$((end + 1)); \
+    done; \
+    test "$(stat -c '%s' "$work_dir/dm8.zip")" -eq "$total_size"; \
     unzip -tq "$work_dir/dm8.zip"; \
     mkdir "$work_dir/zip" "$work_dir/media"; \
     unzip -q "$work_dir/dm8.zip" -d "$work_dir/zip"; \
