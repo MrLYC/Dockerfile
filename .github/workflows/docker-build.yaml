@@ -201,6 +201,13 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "Generated tag: $TAG"
 
+      - name: Load image build configuration
+        id: build-config
+        env:
+          IMAGE_DIR: images/${{ matrix.image }}
+        run: |
+          scripts/resolve-image-build-config.sh "$IMAGE_DIR" >> "$GITHUB_OUTPUT"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -211,7 +218,7 @@ jobs:
             ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ steps.tag.outputs.tag }}
             ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:latest
             ${{ secrets.DOCKER_HUB_USERNAME }}/${{ matrix.image }}:${{ github.ref_name }}
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ steps.build-config.outputs.platforms }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           labels: |
