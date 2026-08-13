@@ -60,6 +60,7 @@ RUN set -eux; \
     work_dir="$(mktemp -d /tmp/dm-download.XXXXXX)"; \
     trap 'rm -rf "$work_dir"' EXIT; \
     curl --fail --location --retry 5 --retry-delay 5 --retry-all-errors \
+        --range 0- \
         "$DM_PACKAGE_URL" --output "$work_dir/dm8.zip"; \
     unzip -tq "$work_dir/dm8.zip"; \
     mkdir "$work_dir/zip" "$work_dir/media"; \
