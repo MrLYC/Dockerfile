@@ -208,6 +208,40 @@ jobs:
         run: |
           scripts/resolve-image-build-config.sh "$IMAGE_DIR" >> "$GITHUB_OUTPUT"
 
+      - name: Diagnose Dameng package endpoint
+        if: matrix.image == 'dameng'
+        run: |
+          set -u
+          package_url="$(sed -n 's/^ARG DM_PACKAGE_URL="\(.*\)"$/\1/p' images/dameng/Dockerfile)"
+          test -n "$package_url"
+          echo "Testing package endpoint from the GitHub-hosted runner"
+          echo "Runner: ${RUNNER_OS} / ${RUNNER_ARCH} / ${ImageOS:-unknown}"
+          echo "Package host: $(printf '%s' "$package_url" | sed -E 's#^[^:]+://([^/]+).*#\1#')"
+          for name in default browser referer http1; do
+            header_file="$(mktemp)"
+            body_file="$(mktemp)"
+            case "$name" in
+              default) headers=() ;;
+              browser) headers=(-A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131 Safari/537.36') ;;
+              referer) headers=(-e 'https://eco.dameng.com/') ;;
+              http1) headers=(--http1.1) ;;
+            esac
+            set +e
+            result="$(curl --location --silent --show-error \
+              --connect-timeout 10 --max-time 15 --range 0-0 \
+              "${headers[@]}" --dump-header "$header_file" \
+              --output "$body_file" --write-out 'exit=%{exitcode} status=%{http_code} remote=%{remote_ip} bytes=%{size_download}' \
+              "$package_url" 2>&1)"
+            curl_status=$?
+            set -u
+            echo "[$name] curl_status=$curl_status $result"
+            awk 'BEGIN { IGNORECASE=1 } /^HTTP\// || /^content-range:/ || /^content-length:/ || /^content-type:/ || /^server:/ || /^location:/ || /^via:/ || /^x-/{ print }' "$header_file" || true
+            echo -n "[$name] body="
+            head -c 512 "$body_file" | tr '\n' ' '
+            echo
+            rm -f "$header_file" "$body_file"
+          done
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
