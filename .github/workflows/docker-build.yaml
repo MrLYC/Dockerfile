@@ -285,7 +285,7 @@ jobs:
         if: ${{ failure() }}
         uses: owenthereal/action-upterm@v1
         with:
-          wait-timeout-minutes: 5
+          wait-timeout-minutes: 1
 
   notify:
     needs: [detect-changes, build-images]
