@@ -16,8 +16,28 @@ From the repository root:
 ./build-images.sh dameng
 ```
 
-The package is about 1 GiB, so the first build needs sufficient network,
-temporary storage, and Docker build cache space.
+The package is about 1 GiB, so the first build needs sufficient temporary
+storage and Docker build cache space. The build downloads it through a pool of
+HTTP/SOCKS5 endpoints collected from ProxyScrape, Proxy5 Free China, and
+databay-labs/free-proxy-list. Each endpoint is tested with a one-byte ranged
+request; the selected endpoint must complete the whole download and pass ZIP
+integrity validation before installation starts.
+
+The pool is intentionally used only during the build. The Dockerfile keeps
+normal TLS certificate verification enabled and never rotates proxies during a
+single package download. For a custom newline-delimited source list, pass
+`protocol|https-url` entries through `DM_PROXY_LIST_URLS`, for example:
+
+```bash
+docker build \
+  --build-arg 'DM_PROXY_LIST_URLS=http|https://example.invalid/proxies.txt' \
+  -t dameng:test images/dameng
+```
+
+Other useful numeric build arguments are `DM_PROXY_MAX_CANDIDATES`,
+`DM_PROXY_PROBE_TIMEOUT`, `DM_PROXY_DOWNLOAD_TIMEOUT`, `DM_PROXY_SPEED_LIMIT`,
+and `DM_PROXY_SPEED_TIME`. `DM_PACKAGE_SHA256` can be set when a trusted
+checksum is available.
 
 ## Run
 

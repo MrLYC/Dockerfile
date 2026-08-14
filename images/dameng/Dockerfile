@@ -6,6 +6,14 @@ LABEL org.opencontainers.image.title="Dameng DM8" \
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG DM_PACKAGE_URL="https://download.dameng.com/eco/adapter/DM8/202605/dm8_20260428_x86_Ubuntu22_64.zip"
+ARG DM_PACKAGE_SHA256=""
+ARG DM_PROXY_LIST_URLS=""
+ARG DM_PROXY_MAX_CANDIDATES=40
+ARG DM_PROXY_PROBE_TIMEOUT=20
+ARG DM_PROXY_CONNECT_TIMEOUT=10
+ARG DM_PROXY_DOWNLOAD_TIMEOUT=1800
+ARG DM_PROXY_SPEED_LIMIT=16384
+ARG DM_PROXY_SPEED_TIME=120
 
 ENV TZ=Asia/Shanghai \
     LANG=C.UTF-8 \
@@ -52,6 +60,7 @@ RUN apt-get update \
         > /etc/security/limits.d/dmdba.conf
 
 COPY dm-install.xml /opt/dm-install.xml
+COPY download-dm-package.sh /usr/local/bin/download-dm-package.sh
 
 # The official download is a ZIP containing an ISO. Extract only DMInstall.bin
 # and remove the 1+ GiB installation media after the silent installation so it
@@ -59,8 +68,16 @@ COPY dm-install.xml /opt/dm-install.xml
 RUN set -eux; \
     work_dir="$(mktemp -d /tmp/dm-download.XXXXXX)"; \
     trap 'rm -rf "$work_dir"' EXIT; \
-    curl --fail --location --retry 5 --retry-delay 5 --retry-all-errors \
-        "$DM_PACKAGE_URL" --output "$work_dir/dm8.zip"; \
+    chmod 0755 /usr/local/bin/download-dm-package.sh; \
+    DM_PACKAGE_SHA256="$DM_PACKAGE_SHA256" \
+    DM_PROXY_LIST_URLS="$DM_PROXY_LIST_URLS" \
+    DM_PROXY_MAX_CANDIDATES="$DM_PROXY_MAX_CANDIDATES" \
+    DM_PROXY_PROBE_TIMEOUT="$DM_PROXY_PROBE_TIMEOUT" \
+    DM_PROXY_CONNECT_TIMEOUT="$DM_PROXY_CONNECT_TIMEOUT" \
+    DM_PROXY_DOWNLOAD_TIMEOUT="$DM_PROXY_DOWNLOAD_TIMEOUT" \
+    DM_PROXY_SPEED_LIMIT="$DM_PROXY_SPEED_LIMIT" \
+    DM_PROXY_SPEED_TIME="$DM_PROXY_SPEED_TIME" \
+        /usr/local/bin/download-dm-package.sh "$DM_PACKAGE_URL" "$work_dir/dm8.zip"; \
     unzip -tq "$work_dir/dm8.zip"; \
     mkdir "$work_dir/zip" "$work_dir/media"; \
     unzip -q "$work_dir/dm8.zip" -d "$work_dir/zip"; \
