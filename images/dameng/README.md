@@ -39,6 +39,10 @@ Other useful numeric build arguments are `DM_PROXY_MAX_CANDIDATES`,
 and `DM_PROXY_SPEED_TIME`. `DM_PACKAGE_SHA256` can be set when a trusted
 checksum is available.
 
+The shared GitHub Actions workflow serializes image publishing per branch, so
+a slower build from an older commit cannot overwrite the `latest` tag after a
+newer build has finished.
+
 ## Run
 
 The database instance is initialized on the first start of an empty `/dmdata`
