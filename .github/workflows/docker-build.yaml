@@ -1,5 +1,11 @@
 name: Build and Push Docker Images
 
+# A previous build must finish publishing before the next commit can update
+# the moving tags. Otherwise a slower older run can overwrite `latest`.
+concurrency:
+  group: docker-images-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
   push:
     branches:
