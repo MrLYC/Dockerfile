@@ -91,7 +91,7 @@ RUN set -eux; \
         /opt/DMInstall.bin -q /opt/dm-install.xml; \
     test -x "$DM_HOME/bin/dmserver"; \
     chown -R dmdba:dinstall "$DM_HOME"; \
-    rm -rf /opt/DMInstall.bin /opt/dm-install.xml /home/dmdba/dm-install-tmp
+    rm -rf /opt/DMInstall.bin /opt/dm-install.xml /usr/local/bin/download-dm-package.sh /home/dmdba/dm-install-tmp
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY docker-healthcheck.sh /usr/local/bin/docker-healthcheck.sh
